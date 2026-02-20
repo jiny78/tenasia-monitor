@@ -104,11 +104,13 @@ function buildReport(articles) {
   articles.forEach((a) => {
     // 카테고리
     categoryCount[a.category] = (categoryCount[a.category] || 0) + 1;
-    // 일별
-    const day = a.collected_at?.slice(0, 10);
+    // 한국시간(KST = UTC+9) 기준으로 날짜/시간 추출
+    const kstDate = a.collected_at ? new Date(new Date(a.collected_at).getTime() + 9 * 60 * 60 * 1000) : null;
+    // 일별 (KST)
+    const day = kstDate ? kstDate.toISOString().slice(0, 10) : null;
     if (day) dailyCount[day] = (dailyCount[day] || 0) + 1;
-    // 시간별
-    const hour = a.collected_at?.slice(11, 13);
+    // 시간별 (KST)
+    const hour = kstDate ? String(kstDate.getUTCHours()).padStart(2, "0") : null;
     if (hour) hourlyCount[hour] = (hourlyCount[hour] || 0) + 1;
     // 기자
     if (a.journalist) journalistCount[a.journalist] = (journalistCount[a.journalist] || 0) + 1;
@@ -162,24 +164,39 @@ async function analyzeWithGemini(report, period) {
 한국어로, 친절하고 전문적으로 작성해주세요. 각 항목은 명확히 구분해주세요.
   `.trim();
 
-  // 사용 가능한 모델: gemini-1.5-flash (추천), gemini-1.5-pro, gemini-2.0-flash-exp
-  // v1beta → v1 엔드포인트 사용 (안정 버전)
-  const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),
+  // 모델 fallback 목록 (순서대로 시도)
+  const MODELS = [
+    { ver: "v1beta", name: "gemini-2.0-flash-exp" },
+    { ver: "v1beta", name: "gemini-2.0-flash" },
+    { ver: "v1beta", name: "gemini-1.5-flash-latest" },
+    { ver: "v1beta", name: "gemini-1.5-flash" },
+    { ver: "v1",     name: "gemini-pro" },
+  ];
+
+  let lastError = null;
+  for (const { ver, name } of MODELS) {
+    try {
+      const res = await fetch(
+        `https://generativelanguage.googleapis.com/${ver}/models/${name}:generateContent?key=${apiKey}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),
+        }
+      );
+      if (!res.ok) {
+        const err = await res.json();
+        lastError = err?.error?.message || `${name} 호출 실패`;
+        continue; // 다음 모델 시도
+      }
+      const data = await res.json();
+      const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (text) return text;
+    } catch (e) {
+      lastError = e.message;
     }
-  );
-
-  if (!res.ok) {
-    const err = await res.json();
-    throw new Error(err?.error?.message || "Gemini API 호출 실패");
   }
-
-  const data = await res.json();
-  return data.candidates?.[0]?.content?.parts?.[0]?.text || "분석 결과를 가져올 수 없습니다.";
+  throw new Error(lastError || "사용 가능한 Gemini 모델을 찾을 수 없습니다.");
 }
 
 // ── 마크다운 간단 렌더 ─────────────────────────────────────────────────
