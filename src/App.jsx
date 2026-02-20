@@ -97,6 +97,7 @@ function buildReport(articles) {
   const keywordCount = {};
   const categoryCount = {};
   const dailyCount = {};
+  const hourlyCount = {};
   const journalistCount = {};
   const keywordArticles = {};
 
@@ -106,6 +107,9 @@ function buildReport(articles) {
     // 일별
     const day = a.collected_at?.slice(0, 10);
     if (day) dailyCount[day] = (dailyCount[day] || 0) + 1;
+    // 시간별
+    const hour = a.collected_at?.slice(11, 13);
+    if (hour) hourlyCount[hour] = (hourlyCount[hour] || 0) + 1;
     // 기자
     if (a.journalist) journalistCount[a.journalist] = (journalistCount[a.journalist] || 0) + 1;
     // 키워드
@@ -125,6 +129,7 @@ function buildReport(articles) {
     category_breakdown: categoryCount,
     top_journalists,
     daily_article_count: Object.fromEntries(Object.entries(dailyCount).sort()),
+    hourly_article_count: hourlyCount,
     keyword_articles: keywordArticles,
   };
 }
@@ -224,10 +229,37 @@ export default function TenAsiaDashboard() {
 
   const keywordData = (report.top_keywords || []).map(([name, count]) => ({ name, count }));
   const categoryData = Object.entries(report.category_breakdown || {}).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value);
-  const dailyData = Object.entries(report.daily_article_count || {}).map(([date, count]) => ({ date: formatDate(date), count }));
   const journalistData = (report.top_journalists || []).slice(0, 7).map(([name, count]) => ({ name, count }));
 
-  const avgDaily = dailyData.length ? Math.round(dailyData.reduce((s, d) => s + d.count, 0) / dailyData.length) : 0;
+  // 오늘이면 시간별, 그 외엔 일별 차트 데이터
+  const isToday = days === 1;
+  let trendData, trendXLabel;
+  if (isToday) {
+    // 0~23시까지 모든 시간 슬롯 생성 (빈 시간도 표시)
+    trendData = Array.from({ length: 24 }, (_, h) => {
+      const hh = String(h).padStart(2, "0");
+      return { date: `${hh}시`, count: report.hourly_article_count?.[hh] || 0 };
+    });
+    trendXLabel = "시간대별 기사 수";
+  } else {
+    // 기간 내 모든 날짜 슬롯 생성 (빈 날짜도 표시)
+    const dailyMap = report.daily_article_count || {};
+    const allDates = Object.keys(dailyMap).sort();
+    if (allDates.length > 0) {
+      const start = new Date(allDates[0]);
+      const end = new Date(allDates[allDates.length - 1]);
+      trendData = [];
+      for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+        const key = d.toISOString().slice(0, 10);
+        trendData.push({ date: formatDate(key), count: dailyMap[key] || 0 });
+      }
+    } else {
+      trendData = [];
+    }
+    trendXLabel = "일별 기사 추이";
+  }
+
+  const avgDaily = trendData.length ? Math.round(trendData.reduce((s, d) => s + d.count, 0) / trendData.filter(d => d.count > 0).length || 0) : 0;
   const topKeyword = keywordData[0]?.name || "-";
   const topCategory = categoryData[0]?.name || "-";
 
@@ -350,12 +382,12 @@ export default function TenAsiaDashboard() {
               ))}
             </div>
 
-            {/* 일별 추이 */}
-            {dailyData.length > 0 && (
+            {/* 기사 추이 (오늘=시간별, 그 외=일별) */}
+            {trendData.length > 0 && (
               <div style={{ ...cardStyle, marginBottom: 20 }}>
-                <h3 style={{ fontSize: 14, fontWeight: 700, margin: "0 0 16px", color: "rgba(232,230,240,0.7)" }}>일별 기사 추이</h3>
+                <h3 style={{ fontSize: 14, fontWeight: 700, margin: "0 0 16px", color: "rgba(232,230,240,0.7)" }}>{trendXLabel}</h3>
                 <ResponsiveContainer width="100%" height={200}>
-                  <LineChart data={dailyData}>
+                  <LineChart data={trendData}>
                     <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
                     <XAxis dataKey="date" tick={{ fontSize: 11, fill: "rgba(232,230,240,0.35)" }} />
                     <YAxis tick={{ fontSize: 11, fill: "rgba(232,230,240,0.35)" }} width={30} />
