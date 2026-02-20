@@ -306,6 +306,37 @@ async function fetchSitemapByDate(dateStr) {
   return data.articles || [];
 }
 
+// ── 기자명 보완 (기사 페이지에서 추출) ────────────────────────────────
+async function fetchJournalists(articles) {
+  // 기자명이 없는 기사 URL만 추출
+  const urlsToFetch = articles
+    .filter((a) => !a.journalist && a.url && a.url !== "#")
+    .map((a) => a.url);
+
+  if (urlsToFetch.length === 0) return articles;
+
+  try {
+    const res = await fetch("/api/journalist", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ urls: urlsToFetch }),
+    });
+    if (!res.ok) return articles;
+    const data = await res.json();
+    if (!data.success || !data.mapping) return articles;
+
+    // 기자명 매핑 적용
+    return articles.map((a) => {
+      if (a.journalist) return a; // 이미 있으면 스킵
+      const info = data.mapping[a.url];
+      if (info?.author) return { ...a, journalist: info.author };
+      return a;
+    });
+  } catch {
+    return articles;
+  }
+}
+
 // ══════════════════════════════════════════════════════════════════════
 export default function TenAsiaDashboard() {
   const [activeTab, setActiveTab] = useState("overview");
@@ -326,6 +357,9 @@ export default function TenAsiaDashboard() {
   const [dateLoading, setDateLoading] = useState(false);
   const [dateError, setDateError] = useState("");
 
+  // 기자명 보완
+  const [journalistLoading, setJournalistLoading] = useState(false);
+
   // AI 분석
   const [aiResult, setAiResult] = useState("");
   const [aiLoading, setAiLoading] = useState(false);
@@ -333,19 +367,30 @@ export default function TenAsiaDashboard() {
 
   useEffect(() => {
     setTimeout(() => setIsLoaded(true), 100);
-    // 실제 RSS 데이터 가져오기
+    // 실제 RSS+사이트맵 데이터 가져오기 → 기자명 보완
     fetchRssArticles()
-      .then((data) => {
+      .then(async (data) => {
         if (data && data.length > 0) {
           setArticles(data);
           setDataSource("live");
+          setDataLoading(false);
+          // 기자명 없는 기사들 → 기사 페이지에서 기자명 추출 (백그라운드)
+          const needFetch = data.filter((a) => !a.journalist && a.url && a.url !== "#");
+          if (needFetch.length > 0) {
+            setJournalistLoading(true);
+            try {
+              const enriched = await fetchJournalists(data);
+              setArticles(enriched);
+            } catch {}
+            setJournalistLoading(false);
+          }
         }
       })
       .catch((e) => {
         console.warn("RSS 로딩 실패, 데모 데이터 사용:", e.message);
         setDataError(e.message);
-      })
-      .finally(() => setDataLoading(false));
+        setDataLoading(false);
+      });
   }, []);
 
   const days = PERIOD_OPTIONS[selectedPeriod].days;
@@ -520,12 +565,24 @@ export default function TenAsiaDashboard() {
                           // 이미 있으면 그대로 사용
                           setDateArticles(existing);
                         } else {
-                          // 없으면 실시간 사이트맵 요청
+                          // 없으면 실시간 사이트맵 요청 + 기자명 보완
                           setDateLoading(true);
                           fetchSitemapByDate(d)
-                            .then((data) => setDateArticles(data))
-                            .catch((err) => setDateError(err.message))
-                            .finally(() => setDateLoading(false));
+                            .then(async (data) => {
+                              setDateArticles(data);
+                              setDateLoading(false);
+                              // 기자명 보완 (백그라운드)
+                              const needJ = data.filter(a => !a.journalist && a.url);
+                              if (needJ.length > 0) {
+                                setJournalistLoading(true);
+                                try {
+                                  const enriched = await fetchJournalists(data);
+                                  setDateArticles(enriched);
+                                } catch {}
+                                setJournalistLoading(false);
+                              }
+                            })
+                            .catch((err) => { setDateError(err.message); setDateLoading(false); });
                         }
                       }
                     }}
@@ -776,15 +833,24 @@ export default function TenAsiaDashboard() {
 
           return (
           <div>
+            {/* 기자명 로딩 중 배너 */}
+            {journalistLoading && (
+              <div style={{
+                padding: "10px 16px", borderRadius: 8, fontSize: 12, marginBottom: 16,
+                background: "rgba(255,107,53,0.08)", border: "1px solid rgba(255,107,53,0.2)",
+                color: "rgba(255,107,53,0.8)", display: "flex", alignItems: "center", gap: 8,
+              }}>
+                ⏳ 기사 페이지에서 기자명을 수집하는 중...
+              </div>
+            )}
             {rankedJournalists.length === 0 ? (
               <div style={{ ...cardStyle, textAlign: "center", padding: 40 }}>
                 <p style={{ color: "rgba(232,230,240,0.3)", fontSize: 14 }}>
-                  {noJournalistCount > 0
-                    ? `${noJournalistCount}건의 기사가 있지만 기자명 정보가 없습니다. (사이트맵 데이터는 기자명 미제공)`
+                  {journalistLoading
+                    ? "기자명을 수집하는 중입니다. 잠시 기다려주세요..."
+                    : noJournalistCount > 0
+                    ? `${noJournalistCount}건의 기사가 있지만 기자명을 아직 불러오지 못했습니다.`
                     : "선택한 기간에 기사가 없습니다."}
-                </p>
-                <p style={{ color: "rgba(232,230,240,0.2)", fontSize: 12, marginTop: 8 }}>
-                  기자명은 RSS 피드(오늘~최근 데이터)에서만 제공됩니다
                 </p>
               </div>
             ) : (
