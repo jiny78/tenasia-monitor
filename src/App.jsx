@@ -307,10 +307,13 @@ async function fetchSitemapByDate(dateStr) {
 }
 
 // ── 기자명 보완 (기사 페이지에서 추출) ────────────────────────────────
+// 동명이인 목록 — 이 이름은 기자명이 있어도 이메일 기반 재구분 필요
+const DUPLICATE_NAMES = new Set(["김지원"]);
+
 async function fetchJournalists(articles) {
-  // 기자명이 없는 기사 URL만 추출
+  // 기자명 없는 기사 + 동명이인 이름인 기사 → 모두 URL 추출
   const urlsToFetch = articles
-    .filter((a) => !a.journalist && a.url && a.url !== "#")
+    .filter((a) => a.url && a.url !== "#" && (!a.journalist || DUPLICATE_NAMES.has(a.journalist)))
     .map((a) => a.url);
 
   if (urlsToFetch.length === 0) return articles;
@@ -327,9 +330,12 @@ async function fetchJournalists(articles) {
 
     // 기자명 매핑 적용
     return articles.map((a) => {
-      if (a.journalist) return a; // 이미 있으면 스킵
       const info = data.mapping[a.url];
-      if (info?.author) return { ...a, journalist: info.author };
+      if (!info?.author) return a;
+      // 동명이인이면 항상 API 결과(김지원A/B)로 대체
+      if (DUPLICATE_NAMES.has(a.journalist)) return { ...a, journalist: info.author };
+      // 기자명 없으면 보완
+      if (!a.journalist) return { ...a, journalist: info.author };
       return a;
     });
   } catch {
