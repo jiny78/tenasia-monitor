@@ -11,26 +11,60 @@ function daysAgo(n, hour = 10) {
 }
 
 const ALL_SAMPLE_ARTICLES = [
-  { title: "방탄소년단 진, 솔로 월드투어 20만 동원", url: "#", category: "뮤직", matched_keywords: ["BTS"], journalist: "이수민", collected_at: daysAgo(0, 10) },
-  { title: "BTS 제이홉, 군 전역 후 첫 공식 스케줄 확정", url: "#", category: "뮤직", matched_keywords: ["BTS"], journalist: "조나연", collected_at: daysAgo(1, 9) },
-  { title: "하이브, BTS 신규 프로젝트 발표 예고", url: "#", category: "엔터비즈", matched_keywords: ["BTS", "하이브"], journalist: "이수민", collected_at: daysAgo(2, 11) },
-  { title: "아이브, 日 오리콘 차트 1위 달성", url: "#", category: "뮤직", matched_keywords: ["아이브"], journalist: "정다연", collected_at: daysAgo(0, 8) },
-  { title: "장원영, 글로벌 브랜드 앰배서더 추가 선정", url: "#", category: "연예가화제", matched_keywords: ["아이브"], journalist: "이민경", collected_at: daysAgo(3, 14) },
-  { title: "세븐틴, 북미 스타디움 투어 전석 매진", url: "#", category: "뮤직", matched_keywords: ["세븐틴"], journalist: "태유나", collected_at: daysAgo(4, 10) },
-  { title: "세븐틴 호시, 자작곡으로 음원차트 진입", url: "#", category: "뮤직", matched_keywords: ["세븐틴"], journalist: "조나연", collected_at: daysAgo(5, 9) },
-  { title: "에스파, 신보 발매 첫날 100만장 돌파", url: "#", category: "뮤직", matched_keywords: ["에스파"], journalist: "정다연", collected_at: daysAgo(6, 12) },
-  { title: "뉴진스 컴백 일정 공식 발표", url: "#", category: "뮤직", matched_keywords: ["뉴진스"], journalist: "이소정", collected_at: daysAgo(7, 10) },
-  { title: "블랙핑크 제니, 솔로 앨범 글로벌 차트 석권", url: "#", category: "뮤직", matched_keywords: ["블랙핑크"], journalist: "이수민", collected_at: daysAgo(8, 11) },
-  { title: "SM엔터, 2분기 실적 전망 상향", url: "#", category: "엔터비즈", matched_keywords: ["SM"], journalist: "박서진", collected_at: daysAgo(9, 9) },
-  { title: "JYP 새 걸그룹 데뷔 예고", url: "#", category: "엔터비즈", matched_keywords: ["JYP"], journalist: "이민경", collected_at: daysAgo(10, 10) },
-  { title: "스트레이키즈, 월드투어 추가 공연 확정", url: "#", category: "뮤직", matched_keywords: ["스트레이키즈"], journalist: "태유나", collected_at: daysAgo(11, 8) },
-  { title: "아이들, 신곡 MV 공개 24시간 1000만뷰 돌파", url: "#", category: "뮤직", matched_keywords: ["아이들"], journalist: "조나연", collected_at: daysAgo(12, 14) },
-  { title: "YG엔터, 블랙핑크 재계약 협상 진행 중", url: "#", category: "엔터비즈", matched_keywords: ["YG", "블랙핑크"], journalist: "이수민", collected_at: daysAgo(13, 11) },
-  { title: "BTS RM, 솔로 콘서트 전석 매진", url: "#", category: "뮤직", matched_keywords: ["BTS"], journalist: "정다연", collected_at: daysAgo(14, 10) },
-  { title: "카카오엔터, 글로벌 IP 사업 확장 발표", url: "#", category: "엔터비즈", matched_keywords: ["카카오"], journalist: "박서진", collected_at: daysAgo(15, 9) },
-  { title: "아이브 원영, 드라마 주연 캐스팅 확정", url: "#", category: "드라마예능", matched_keywords: ["아이브"], journalist: "이소정", collected_at: daysAgo(16, 13) },
-  { title: "세븐틴, 한국 가수 최초 웸블리 단독 공연", url: "#", category: "뮤직", matched_keywords: ["세븐틴"], journalist: "태유나", collected_at: daysAgo(17, 10) },
-  { title: "뉴진스 민지, 파리 패션위크 참석", url: "#", category: "연예가화제", matched_keywords: ["뉴진스"], journalist: "이민경", collected_at: daysAgo(21, 11) },
+  // 오늘 (7건)
+  { title: "방탄소년단 진, 솔로 월드투어 20만 동원", url: "#", category: "뮤직", matched_keywords: ["BTS"], journalist: "이수민", views: 98200, shares: 4300, collected_at: daysAgo(0, 7) },
+  { title: "아이브, 日 오리콘 차트 1위 달성", url: "#", category: "뮤직", matched_keywords: ["아이브"], journalist: "정다연", views: 75400, shares: 3100, collected_at: daysAgo(0, 8) },
+  { title: "세븐틴 새 앨범 티저 공개, 팬덤 폭발적 반응", url: "#", category: "뮤직", matched_keywords: ["세븐틴"], journalist: "조나연", views: 61000, shares: 2700, collected_at: daysAgo(0, 9) },
+  { title: "에스파 카리나, 글로벌 브랜드 캠페인 메인 발탁", url: "#", category: "연예가화제", matched_keywords: ["에스파"], journalist: "이민경", views: 54300, shares: 2200, collected_at: daysAgo(0, 10) },
+  { title: "하이브, 상반기 글로벌 투어 일정 공개", url: "#", category: "엔터비즈", matched_keywords: ["하이브", "BTS"], journalist: "이수민", views: 47800, shares: 1900, collected_at: daysAgo(0, 11) },
+  { title: "뉴진스, 일본 데뷔 싱글 오리콘 정상", url: "#", category: "뮤직", matched_keywords: ["뉴진스"], journalist: "태유나", views: 43200, shares: 1700, collected_at: daysAgo(0, 14) },
+  { title: "JYP 신인 걸그룹, 데뷔 쇼케이스 전석 매진", url: "#", category: "연예가화제", matched_keywords: ["JYP"], journalist: "박서진", views: 38900, shares: 1500, collected_at: daysAgo(0, 16) },
+
+  // 1일 전 (6건)
+  { title: "BTS 제이홉, 군 전역 후 첫 공식 스케줄 확정", url: "#", category: "뮤직", matched_keywords: ["BTS"], journalist: "조나연", views: 112000, shares: 5800, collected_at: daysAgo(1, 8) },
+  { title: "블랙핑크 제니, 솔로 앨범 글로벌 차트 석권", url: "#", category: "뮤직", matched_keywords: ["블랙핑크"], journalist: "이수민", views: 88500, shares: 4100, collected_at: daysAgo(1, 9) },
+  { title: "장원영, 글로벌 브랜드 앰배서더 추가 선정", url: "#", category: "연예가화제", matched_keywords: ["아이브"], journalist: "이민경", views: 67300, shares: 3200, collected_at: daysAgo(1, 11) },
+  { title: "스트레이키즈, 월드투어 추가 공연 확정", url: "#", category: "뮤직", matched_keywords: ["스트레이키즈"], journalist: "태유나", views: 55900, shares: 2600, collected_at: daysAgo(1, 13) },
+  { title: "SM엔터, 상반기 신규 아티스트 데뷔 계획 발표", url: "#", category: "엔터비즈", matched_keywords: ["SM"], journalist: "박서진", views: 41200, shares: 1800, collected_at: daysAgo(1, 15) },
+  { title: "아이들 신곡 MV, 24시간 1000만뷰 돌파", url: "#", category: "뮤직", matched_keywords: ["아이들"], journalist: "이소정", views: 36700, shares: 1600, collected_at: daysAgo(1, 17) },
+
+  // 2일 전 (5건)
+  { title: "하이브, BTS 신규 프로젝트 발표 예고", url: "#", category: "엔터비즈", matched_keywords: ["BTS", "하이브"], journalist: "이수민", views: 95400, shares: 4700, collected_at: daysAgo(2, 9) },
+  { title: "세븐틴, 북미 스타디움 투어 전석 매진", url: "#", category: "뮤직", matched_keywords: ["세븐틴"], journalist: "조나연", views: 78200, shares: 3500, collected_at: daysAgo(2, 10) },
+  { title: "에스파 윈터, 드라마 OST 참여 확정", url: "#", category: "드라마예능", matched_keywords: ["에스파"], journalist: "정다연", views: 52100, shares: 2300, collected_at: daysAgo(2, 12) },
+  { title: "YG엔터, 블랙핑크 재계약 협상 진행 중", url: "#", category: "엔터비즈", matched_keywords: ["YG", "블랙핑크"], journalist: "이수민", views: 48700, shares: 2100, collected_at: daysAgo(2, 14) },
+  { title: "뉴진스 컴백 일정 공식 발표", url: "#", category: "뮤직", matched_keywords: ["뉴진스"], journalist: "이소정", views: 44300, shares: 2000, collected_at: daysAgo(2, 16) },
+
+  // 3일 전 (5건)
+  { title: "BTS RM, 솔로 콘서트 전석 매진 기록", url: "#", category: "뮤직", matched_keywords: ["BTS"], journalist: "정다연", views: 87600, shares: 4200, collected_at: daysAgo(3, 8) },
+  { title: "아이브 원영, 드라마 주연 캐스팅 확정", url: "#", category: "드라마예능", matched_keywords: ["아이브"], journalist: "이소정", views: 71500, shares: 3300, collected_at: daysAgo(3, 10) },
+  { title: "카카오엔터, 글로벌 IP 사업 확장 발표", url: "#", category: "엔터비즈", matched_keywords: ["카카오"], journalist: "박서진", views: 39800, shares: 1700, collected_at: daysAgo(3, 13) },
+  { title: "세븐틴 호시, 자작곡으로 음원차트 진입", url: "#", category: "뮤직", matched_keywords: ["세븐틴"], journalist: "태유나", views: 58300, shares: 2800, collected_at: daysAgo(3, 15) },
+  { title: "스트레이키즈 방찬, 美 음악 매체 인터뷰 화제", url: "#", category: "연예가화제", matched_keywords: ["스트레이키즈"], journalist: "이민경", views: 46100, shares: 2100, collected_at: daysAgo(3, 17) },
+
+  // 4일 전 (4건)
+  { title: "에스파, 신보 발매 첫날 100만장 돌파", url: "#", category: "뮤직", matched_keywords: ["에스파"], journalist: "정다연", views: 93200, shares: 4600, collected_at: daysAgo(4, 9) },
+  { title: "블랙핑크 리사, 솔로 월드투어 추가 도시 발표", url: "#", category: "뮤직", matched_keywords: ["블랙핑크"], journalist: "조나연", views: 81400, shares: 3900, collected_at: daysAgo(4, 11) },
+  { title: "JYP, 2분기 실적 시장 예상 상회", url: "#", category: "엔터비즈", matched_keywords: ["JYP"], journalist: "이수민", views: 35600, shares: 1400, collected_at: daysAgo(4, 14) },
+  { title: "뉴진스 민지, 파리 패션위크 참석", url: "#", category: "연예가화제", matched_keywords: ["뉴진스"], journalist: "이민경", views: 62700, shares: 3100, collected_at: daysAgo(4, 16) },
+
+  // 5일 전 (4건)
+  { title: "세븐틴, 한국 가수 최초 웸블리 단독 공연 확정", url: "#", category: "뮤직", matched_keywords: ["세븐틴"], journalist: "태유나", views: 104500, shares: 5200, collected_at: daysAgo(5, 9) },
+  { title: "BTS 슈가, 솔로 투어 전 세계 반응 화제", url: "#", category: "뮤직", matched_keywords: ["BTS"], journalist: "이소정", views: 89300, shares: 4400, collected_at: daysAgo(5, 11) },
+  { title: "SM엔터, 2분기 실적 전망 상향", url: "#", category: "엔터비즈", matched_keywords: ["SM"], journalist: "박서진", views: 33400, shares: 1200, collected_at: daysAgo(5, 14) },
+  { title: "아이들, 유럽 투어 전석 매진 기록", url: "#", category: "뮤직", matched_keywords: ["아이들"], journalist: "정다연", views: 57800, shares: 2700, collected_at: daysAgo(5, 16) },
+
+  // 6~7일 전 (4건)
+  { title: "블랙핑크 지수, 솔로 앨범 빌보드 진입", url: "#", category: "뮤직", matched_keywords: ["블랙핑크"], journalist: "조나연", views: 76900, shares: 3600, collected_at: daysAgo(6, 10) },
+  { title: "하이브, 위버스 글로벌 사용자 1억명 돌파", url: "#", category: "엔터비즈", matched_keywords: ["하이브"], journalist: "이수민", views: 44500, shares: 2000, collected_at: daysAgo(6, 13) },
+  { title: "스트레이키즈, 미국 음악 시상식 수상", url: "#", category: "연예가화제", matched_keywords: ["스트레이키즈"], journalist: "이민경", views: 68200, shares: 3300, collected_at: daysAgo(7, 9) },
+  { title: "에스파, 글로벌 팬미팅 추가 도시 확정", url: "#", category: "연예가화제", matched_keywords: ["에스파"], journalist: "태유나", views: 49800, shares: 2300, collected_at: daysAgo(7, 14) },
+
+  // 2~3주 전 (4건)
+  { title: "BTS, UN 연설 이후 글로벌 미디어 집중 조명", url: "#", category: "연예가화제", matched_keywords: ["BTS"], journalist: "이수민", views: 135000, shares: 7200, collected_at: daysAgo(14, 10) },
+  { title: "세븐틴 디노, 솔로 데뷔 앨범 차트 1위", url: "#", category: "뮤직", matched_keywords: ["세븐틴"], journalist: "조나연", views: 58900, shares: 2900, collected_at: daysAgo(15, 11) },
+  { title: "뉴진스, 광고 모델 계약 7건 동시 발표", url: "#", category: "엔터비즈", matched_keywords: ["뉴진스"], journalist: "박서진", views: 47200, shares: 2200, collected_at: daysAgo(18, 9) },
+  { title: "카카오엔터, 새 아이돌 그룹 연내 데뷔 예고", url: "#", category: "엔터비즈", matched_keywords: ["카카오"], journalist: "이소정", views: 31500, shares: 1300, collected_at: daysAgo(21, 13) },
 ];
 
 const COLORS = ["#FF6B35", "#E8308A", "#7B2FBE", "#2563EB", "#059669", "#D97706", "#DC2626", "#6366F1", "#0891B2", "#BE185D"];
@@ -124,7 +158,7 @@ async function analyzeWithGemini(report, period) {
   `.trim();
 
   const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-04-17:generateContent?key=${apiKey}`,
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -435,7 +469,23 @@ export default function TenAsiaDashboard() {
         )}
 
         {/* ── 베스트 기사 탭 ── */}
-        {activeTab === "articles" && (
+        {activeTab === "articles" && (() => {
+          // 베스트 기사 점수 알고리즘
+          // 조회수(40%) + 공유수(40%) + 최신성(20%) 가중 합산
+          const now = Date.now();
+          const maxViews = Math.max(...filtered.map(a => a.views || 0), 1);
+          const maxShares = Math.max(...filtered.map(a => a.shares || 0), 1);
+          const maxAge = Math.max(...filtered.map(a => now - new Date(a.collected_at).getTime()), 1);
+
+          const scored = [...filtered].map(a => {
+            const viewScore  = ((a.views  || 0) / maxViews)  * 40;
+            const shareScore = ((a.shares || 0) / maxShares) * 40;
+            const ageMs = now - new Date(a.collected_at).getTime();
+            const freshnessScore = (1 - ageMs / maxAge) * 20; // 최신일수록 높음
+            return { ...a, _score: viewScore + shareScore + freshnessScore };
+          }).sort((a, b) => b._score - a._score);
+
+          return (
           <div>
             {filtered.length === 0 ? (
               <div style={{ ...cardStyle, textAlign: "center", padding: 40 }}>
@@ -443,15 +493,14 @@ export default function TenAsiaDashboard() {
               </div>
             ) : (
               <>
-                <div style={{ marginBottom: 16, display: "flex", alignItems: "center", gap: 8 }}>
+                <div style={{ marginBottom: 16, display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
                   <span style={{ fontSize: 12, color: "rgba(232,230,240,0.35)" }}>
-                    키워드 언급 많은 순 · 총 <span style={{ color: "#FF6B35", fontWeight: 600 }}>{filtered.length}건</span>
+                    조회수 · 공유수 · 최신성 기반 점수순 · 총 <span style={{ color: "#FF6B35", fontWeight: 600 }}>{filtered.length}건</span>
                   </span>
+                  <span style={{ fontSize: 11, color: "rgba(232,230,240,0.2)" }}>조회수 40% + 공유수 40% + 최신성 20%</span>
                 </div>
                 <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                  {[...filtered]
-                    .sort((a, b) => (b.matched_keywords?.length || 0) - (a.matched_keywords?.length || 0))
-                    .map((article, i) => (
+                  {scored.map((article, i) => (
                       <a
                         key={i}
                         href={article.url !== "#" ? article.url : undefined}
@@ -517,9 +566,11 @@ export default function TenAsiaDashboard() {
                                   # {kw}
                                 </span>
                               ))}
-                              {/* 날짜 */}
-                              <span style={{ fontSize: 11, color: "rgba(232,230,240,0.25)", marginLeft: "auto" }}>
-                                {article.collected_at?.slice(0, 10)}
+                              {/* 조회수 / 공유수 / 날짜 */}
+                              <span style={{ fontSize: 11, color: "rgba(232,230,240,0.25)", marginLeft: "auto", display: "flex", gap: 8, alignItems: "center" }}>
+                                {article.views ? `👁 ${(article.views/1000).toFixed(1)}k` : ""}
+                                {article.shares ? `🔗 ${(article.shares/1000).toFixed(1)}k` : ""}
+                                <span>{article.collected_at?.slice(0, 10)}</span>
                               </span>
                             </div>
                           </div>
@@ -535,7 +586,8 @@ export default function TenAsiaDashboard() {
               </>
             )}
           </div>
-        )}
+          );
+        })()}
 
         {/* ── AI 분석 탭 ── */}
         {activeTab === "ai" && (
