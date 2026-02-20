@@ -99,6 +99,50 @@ function filterByPeriod(articles, days, specificDate = null) {
   });
 }
 
+// ── 키워드 자동 추출 (기사 제목에서 자연어 분석) ──────────────────────
+const STOP_WORDS = new Set([
+  // 일반 불용어
+  "하는","있다","에서","이다","까지","그리고","하고","에게","으로","했다",
+  "이어","한다","대한","위해","있는","없는","이후","이전","바로","것이",
+  "통해","함께","대해","관련","하며","하면","한번","무엇","어떤","이것",
+  "그것","저것","여기","거기","어디","이번","그동안","그래서","그러나",
+  // 시간
+  "오늘","어제","내일","지금","올해","매일","최근","당시",
+  // 기사체 상투어
+  "했다더니","알고보니","밝혔다","언급했다","고백했다","알렸다","전했다",
+  "결국","올라간","가장","입소문","터졌다","요즘","화제","대세","드러났다",
+  "나왔다","됐다","했다","된다","한다","봤다","갔다","왔다","줬다","넘는",
+  "이상","이하","정도","이래","소식","사실","모습","심경","충격","논란",
+  "공개","확정","발표","참석","진행","예정","소속","활동","계획","관심",
+  "만에","만큼","가운데","또한","여전히","이미","다시","위한","같은",
+  "아닌","것으로","대해서","뿐만","아니라","하지만","그런데","그래도",
+  // 조사·어미 단편
+  "에는","으로는","까지도","에서도","에게도","했는데","했지만","했다가",
+  // 수치·단위
+  "100","200","300","500","1000","만원","만명","억원",
+]);
+
+function extractKeywords(title) {
+  if (!title) return [];
+  const cleaned = title
+    .replace(/\[.*?\]/g, " ")     // [전문], [TEN차트] 등 제거
+    .replace(/\(.*?\)/g, " ")     // (사진) 등 제거
+    .replace(/['""''…·→←↗↘!?]/g, " ")
+    .replace(/\d+세|\d+살|\d+일|\d+월|\d+년|\d+시|\d+분/g, " ") // 나이/날짜 제거
+    .replace(/\d+k|\d+만|\d+억/g, " ");
+
+  const words = cleaned
+    .split(/[\s,.'·…"+]+/)
+    .map((w) => w.trim())
+    .filter((w) => {
+      if (w.length < 2) return false;
+      if (/^\d+$/.test(w)) return false;
+      if (STOP_WORDS.has(w)) return false;
+      return true;
+    });
+  return words;
+}
+
 // ── 리포트 생성 ────────────────────────────────────────────────────────
 function buildReport(articles) {
   const keywordCount = {};
@@ -121,15 +165,22 @@ function buildReport(articles) {
     if (hour) hourlyCount[hour] = (hourlyCount[hour] || 0) + 1;
     // 기자
     if (a.journalist) journalistCount[a.journalist] = (journalistCount[a.journalist] || 0) + 1;
-    // 키워드
-    (a.matched_keywords || []).forEach((kw) => {
+    // 키워드 자동 추출 (기사 제목에서)
+    const words = extractKeywords(a.title);
+    const seen = new Set(); // 같은 기사에서 중복 카운트 방지
+    words.forEach((kw) => {
+      if (seen.has(kw)) return;
+      seen.add(kw);
       keywordCount[kw] = (keywordCount[kw] || 0) + 1;
       if (!keywordArticles[kw]) keywordArticles[kw] = [];
-      if (keywordArticles[kw].length < 5) keywordArticles[kw].push({ title: a.title, url: a.url, category: a.category });
+      if (keywordArticles[kw].length < 8) keywordArticles[kw].push({ title: a.title, url: a.url, category: a.category });
     });
   });
 
-  const top_keywords = Object.entries(keywordCount).sort((a, b) => b[1] - a[1]);
+  // 2회 이상 등장한 키워드만 (의미 있는 트렌드)
+  const top_keywords = Object.entries(keywordCount)
+    .filter(([, count]) => count >= 2)
+    .sort((a, b) => b[1] - a[1]);
   const top_journalists = Object.entries(journalistCount).sort((a, b) => b[1] - a[1]);
 
   return {
