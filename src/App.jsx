@@ -82,7 +82,14 @@ const PERIOD_OPTIONS = [
 ];
 
 // ── 기간 필터링 ────────────────────────────────────────────────────────
-function filterByPeriod(articles, days) {
+// specificDate: "YYYY-MM-DD" 형식이면 해당 날짜 하루만, 없으면 days 기준
+function filterByPeriod(articles, days, specificDate = null) {
+  if (specificDate) {
+    return articles.filter((a) => {
+      const kst = new Date(new Date(a.collected_at).getTime() + 9 * 60 * 60 * 1000);
+      return kst.toISOString().slice(0, 10) === specificDate;
+    });
+  }
   if (days >= 9999) return articles;
   const cutoff = new Date();
   cutoff.setDate(cutoff.getDate() - days);
@@ -243,6 +250,8 @@ async function fetchRssArticles() {
 export default function TenAsiaDashboard() {
   const [activeTab, setActiveTab] = useState("overview");
   const [selectedPeriod, setSelectedPeriod] = useState(1); // index
+  const [specificDate, setSpecificDate] = useState(""); // "YYYY-MM-DD" or ""
+  const [showDatePicker, setShowDatePicker] = useState(false);
   const [selectedKeyword, setSelectedKeyword] = useState(null);
   const [isLoaded, setIsLoaded] = useState(false);
 
@@ -275,16 +284,17 @@ export default function TenAsiaDashboard() {
   }, []);
 
   const days = PERIOD_OPTIONS[selectedPeriod].days;
-  const periodLabel = PERIOD_OPTIONS[selectedPeriod].label;
-  const filtered = filterByPeriod(articles, days);
+  const periodLabel = specificDate ? `${specificDate} 하루` : PERIOD_OPTIONS[selectedPeriod].label;
+  const filtered = filterByPeriod(articles, days, specificDate || null);
   const report = buildReport(filtered);
 
   const keywordData = (report.top_keywords || []).map(([name, count]) => ({ name, count }));
   const categoryData = Object.entries(report.category_breakdown || {}).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value);
   const journalistData = (report.top_journalists || []).slice(0, 7).map(([name, count]) => ({ name, count }));
 
-  // 오늘이면 시간별, 그 외엔 일별 차트 데이터
-  const isToday = days === 1;
+  // 오늘 또는 특정일 하루 선택이면 시간별, 그 외엔 일별 차트 데이터
+  const todayStr = new Date(new Date().getTime() + 9*60*60*1000).toISOString().slice(0,10);
+  const isToday = (days === 1 && !specificDate) || specificDate === todayStr || (!!specificDate && specificDate.length === 10);
   let trendData, trendXLabel;
   if (isToday) {
     // 0~23시까지 모든 시간 슬롯 생성 (빈 시간도 표시)
@@ -370,18 +380,84 @@ export default function TenAsiaDashboard() {
           </div>
 
           {/* 기간 선택 */}
-          <div style={{ display: "flex", gap: 6, background: "rgba(255,255,255,0.03)", padding: "4px", borderRadius: 10, border: "1px solid rgba(255,255,255,0.06)" }}>
-            {PERIOD_OPTIONS.map((opt, i) => (
-              <button key={i} onClick={() => { setSelectedPeriod(i); setSelectedKeyword(null); setAiResult(""); setAiError(""); }} style={{
-                padding: "6px 14px", borderRadius: 7, border: "none", cursor: "pointer",
-                background: selectedPeriod === i ? "#FF6B35" : "transparent",
-                color: selectedPeriod === i ? "#fff" : "rgba(232,230,240,0.45)",
-                fontSize: 12, fontWeight: selectedPeriod === i ? 700 : 500,
-                transition: "all 0.2s",
-              }}>
-                {opt.label}
+          <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+            {/* 기간 버튼 그룹 */}
+            <div style={{ display: "flex", gap: 6, background: "rgba(255,255,255,0.03)", padding: "4px", borderRadius: 10, border: "1px solid rgba(255,255,255,0.06)" }}>
+              {PERIOD_OPTIONS.map((opt, i) => (
+                <button key={i} onClick={() => {
+                  setSelectedPeriod(i);
+                  setSpecificDate("");
+                  setShowDatePicker(false);
+                  setSelectedKeyword(null);
+                  setAiResult(""); setAiError("");
+                }} style={{
+                  padding: "6px 14px", borderRadius: 7, border: "none", cursor: "pointer",
+                  background: selectedPeriod === i && !specificDate ? "#FF6B35" : "transparent",
+                  color: selectedPeriod === i && !specificDate ? "#fff" : "rgba(232,230,240,0.45)",
+                  fontSize: 12, fontWeight: selectedPeriod === i && !specificDate ? 700 : 500,
+                  transition: "all 0.2s",
+                }}>
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+
+            {/* 특정일 선택 버튼 */}
+            <div style={{ position: "relative" }}>
+              <button
+                onClick={() => setShowDatePicker(v => !v)}
+                style={{
+                  padding: "6px 12px", borderRadius: 8, border: "none", cursor: "pointer",
+                  background: specificDate ? "#FF6B35" : "rgba(255,255,255,0.05)",
+                  color: specificDate ? "#fff" : "rgba(232,230,240,0.5)",
+                  fontSize: 12, fontWeight: specificDate ? 700 : 500,
+                  display: "flex", alignItems: "center", gap: 5,
+                  transition: "all 0.2s",
+                }}
+              >
+                📅 {specificDate || "특정일"}
+                {specificDate && (
+                  <span
+                    onClick={(e) => { e.stopPropagation(); setSpecificDate(""); setShowDatePicker(false); setAiResult(""); setAiError(""); }}
+                    style={{ marginLeft: 4, fontSize: 13, lineHeight: 1, opacity: 0.8, cursor: "pointer" }}
+                  >✕</span>
+                )}
               </button>
-            ))}
+
+              {/* 날짜 피커 드롭다운 */}
+              {showDatePicker && (
+                <div style={{
+                  position: "absolute", top: "calc(100% + 6px)", right: 0, zIndex: 100,
+                  background: "#1A1A24", border: "1px solid rgba(255,107,53,0.3)",
+                  borderRadius: 10, padding: 12, boxShadow: "0 8px 32px rgba(0,0,0,0.5)",
+                  minWidth: 220,
+                }}>
+                  <p style={{ margin: "0 0 8px", fontSize: 11, color: "rgba(232,230,240,0.4)" }}>날짜를 선택하세요</p>
+                  <input
+                    type="date"
+                    value={specificDate}
+                    max={new Date(new Date().getTime() + 9*60*60*1000).toISOString().slice(0,10)}
+                    onChange={(e) => {
+                      setSpecificDate(e.target.value);
+                      setShowDatePicker(false);
+                      setSelectedKeyword(null);
+                      setAiResult(""); setAiError("");
+                    }}
+                    style={{
+                      width: "100%", padding: "7px 10px", borderRadius: 7,
+                      background: "rgba(255,255,255,0.06)",
+                      border: "1px solid rgba(255,107,53,0.3)",
+                      color: "#E8E6F0", fontSize: 13,
+                      outline: "none", boxSizing: "border-box",
+                      colorScheme: "dark",
+                    }}
+                  />
+                  <p style={{ margin: "8px 0 0", fontSize: 10, color: "rgba(232,230,240,0.25)" }}>
+                    최근 13일 이내 날짜만 데이터가 있습니다
+                  </p>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
@@ -563,18 +639,17 @@ export default function TenAsiaDashboard() {
 
         {/* ── 베스트 기사 탭 ── */}
         {activeTab === "articles" && (() => {
-          // 베스트 기사 점수 알고리즘
-          // 조회수(40%) + 공유수(40%) + 최신성(20%) 가중 합산
           const now = Date.now();
-          const maxViews = Math.max(...filtered.map(a => a.views || 0), 1);
+          const hasViewData = filtered.some(a => (a.views || 0) > 0);
+          const maxViews  = Math.max(...filtered.map(a => a.views  || 0), 1);
           const maxShares = Math.max(...filtered.map(a => a.shares || 0), 1);
-          const maxAge = Math.max(...filtered.map(a => now - new Date(a.collected_at).getTime()), 1);
+          const maxAge    = Math.max(...filtered.map(a => now - new Date(a.collected_at).getTime()), 1);
 
           const scored = [...filtered].map(a => {
-            const viewScore  = ((a.views  || 0) / maxViews)  * 40;
-            const shareScore = ((a.shares || 0) / maxShares) * 40;
-            const ageMs = now - new Date(a.collected_at).getTime();
-            const freshnessScore = (1 - ageMs / maxAge) * 20; // 최신일수록 높음
+            const viewScore      = ((a.views  || 0) / maxViews)  * 40;
+            const shareScore     = ((a.shares || 0) / maxShares) * 40;
+            const ageMs          = now - new Date(a.collected_at).getTime();
+            const freshnessScore = (1 - ageMs / maxAge) * (hasViewData ? 20 : 100);
             return { ...a, _score: viewScore + shareScore + freshnessScore };
           }).sort((a, b) => b._score - a._score);
 
@@ -588,9 +663,15 @@ export default function TenAsiaDashboard() {
               <>
                 <div style={{ marginBottom: 16, display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
                   <span style={{ fontSize: 12, color: "rgba(232,230,240,0.35)" }}>
-                    조회수 · 공유수 · 최신성 기반 점수순 · 총 <span style={{ color: "#FF6B35", fontWeight: 600 }}>{filtered.length}건</span>
+                    {hasViewData ? "조회수 · 공유수 · 최신성 기반 점수순" : "최신순"} · 총{" "}
+                    <span style={{ color: "#FF6B35", fontWeight: 600 }}>{filtered.length}건</span>
                   </span>
-                  <span style={{ fontSize: 11, color: "rgba(232,230,240,0.2)" }}>조회수 40% + 공유수 40% + 최신성 20%</span>
+                  {hasViewData
+                    ? <span style={{ fontSize: 11, color: "rgba(232,230,240,0.2)" }}>조회수 40% + 공유수 40% + 최신성 20%</span>
+                    : <span style={{ fontSize: 11, padding: "2px 8px", borderRadius: 4, background: "rgba(255,107,53,0.08)", color: "rgba(255,107,53,0.5)" }}>
+                        ℹ️ LIVE 데이터는 조회수/공유수를 제공하지 않아 최신순으로 표시합니다
+                      </span>
+                  }
                 </div>
                 <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                   {scored.map((article, i) => (
