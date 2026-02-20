@@ -208,6 +208,15 @@ function SimpleMarkdown({ text }) {
   );
 }
 
+// ── RSS 데이터 가져오기 ────────────────────────────────────────────────
+async function fetchRssArticles() {
+  const res = await fetch("/api/rss");
+  if (!res.ok) throw new Error("RSS 데이터를 가져올 수 없습니다.");
+  const data = await res.json();
+  if (!data.success) throw new Error(data.error || "RSS 수집 실패");
+  return data.articles;
+}
+
 // ══════════════════════════════════════════════════════════════════════
 export default function TenAsiaDashboard() {
   const [activeTab, setActiveTab] = useState("overview");
@@ -215,16 +224,37 @@ export default function TenAsiaDashboard() {
   const [selectedKeyword, setSelectedKeyword] = useState(null);
   const [isLoaded, setIsLoaded] = useState(false);
 
+  // 실제 데이터
+  const [articles, setArticles] = useState(ALL_SAMPLE_ARTICLES);
+  const [dataSource, setDataSource] = useState("demo"); // "demo" | "live"
+  const [dataLoading, setDataLoading] = useState(true);
+  const [dataError, setDataError] = useState("");
+
   // AI 분석
   const [aiResult, setAiResult] = useState("");
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState("");
 
-  useEffect(() => { setTimeout(() => setIsLoaded(true), 100); }, []);
+  useEffect(() => {
+    setTimeout(() => setIsLoaded(true), 100);
+    // 실제 RSS 데이터 가져오기
+    fetchRssArticles()
+      .then((data) => {
+        if (data && data.length > 0) {
+          setArticles(data);
+          setDataSource("live");
+        }
+      })
+      .catch((e) => {
+        console.warn("RSS 로딩 실패, 데모 데이터 사용:", e.message);
+        setDataError(e.message);
+      })
+      .finally(() => setDataLoading(false));
+  }, []);
 
   const days = PERIOD_OPTIONS[selectedPeriod].days;
   const periodLabel = PERIOD_OPTIONS[selectedPeriod].label;
-  const filtered = filterByPeriod(ALL_SAMPLE_ARTICLES, days);
+  const filtered = filterByPeriod(articles, days);
   const report = buildReport(filtered);
 
   const keywordData = (report.top_keywords || []).map(([name, count]) => ({ name, count }));
@@ -305,7 +335,16 @@ export default function TenAsiaDashboard() {
               <span style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-0.5px", color: "#E8E6F0" }}>TREND</span>
               <span style={{ fontSize: 10, fontWeight: 600, padding: "2px 8px", borderRadius: 4, background: "rgba(255,107,53,0.15)", color: "#FF6B35", marginLeft: 4 }}>REPORT</span>
             </div>
-            <p style={{ fontSize: 12, color: "rgba(232,230,240,0.4)", margin: 0 }}>텐아시아 K-엔터 트렌드 모니터</p>
+            <p style={{ fontSize: 12, color: "rgba(232,230,240,0.4)", margin: 0 }}>
+              텐아시아 K-엔터 트렌드 모니터
+              <span style={{
+                fontSize: 10, fontWeight: 600, padding: "1px 6px", borderRadius: 4, marginLeft: 8,
+                background: dataSource === "live" ? "rgba(5,150,105,0.15)" : "rgba(255,107,53,0.15)",
+                color: dataSource === "live" ? "#059669" : "#FF6B35",
+              }}>
+                {dataLoading ? "⏳ 로딩 중..." : dataSource === "live" ? "🟢 LIVE" : "📋 DEMO"}
+              </span>
+            </p>
           </div>
 
           {/* 기간 선택 */}
