@@ -164,13 +164,16 @@ async function analyzeWithGemini(report, period) {
 한국어로, 친절하고 전문적으로 작성해주세요. 각 항목은 명확히 구분해주세요.
   `.trim();
 
-  // 모델 fallback 목록 (순서대로 시도)
+  // 모델 fallback 목록 (순서대로 시도 — 하나 막히면 다음으로 자동 전환)
   const MODELS = [
+    { ver: "v1beta", name: "gemini-2.5-flash" },
+    { ver: "v1beta", name: "gemini-2.5-pro" },
     { ver: "v1beta", name: "gemini-2.0-flash-exp" },
     { ver: "v1beta", name: "gemini-2.0-flash" },
     { ver: "v1beta", name: "gemini-1.5-flash-latest" },
+    { ver: "v1beta", name: "gemini-1.5-pro-latest" },
     { ver: "v1beta", name: "gemini-1.5-flash" },
-    { ver: "v1",     name: "gemini-pro" },
+    { ver: "v1beta", name: "gemini-1.5-pro" },
   ];
 
   let lastError = null;
