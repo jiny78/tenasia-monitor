@@ -163,8 +163,9 @@ async function analyzeWithGemini(report, period) {
   `.trim();
 
   // 사용 가능한 모델: gemini-1.5-flash (추천), gemini-1.5-pro, gemini-2.0-flash-exp
+  // v1beta → v1 엔드포인트 사용 (안정 버전)
   const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+    `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
