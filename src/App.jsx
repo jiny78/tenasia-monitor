@@ -457,6 +457,8 @@ export default function TenAsiaDashboard() {
     background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)",
   };
 
+  const isAnyLoading = dataLoading || dateLoading || journalistLoading;
+
   return (
     <div style={{
       minHeight: "100vh",
@@ -466,11 +468,38 @@ export default function TenAsiaDashboard() {
     }}>
       <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" rel="stylesheet" />
 
+      {/* ── 글로벌 로딩 바 ── */}
+      {isAnyLoading && (
+        <div style={{
+          position: "fixed", top: 0, left: 0, right: 0, zIndex: 9999,
+          background: "rgba(255,255,255,0.12)",
+          backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)",
+          borderBottom: "1px solid rgba(255,255,255,0.08)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          gap: 10, padding: "10px 20px",
+        }}>
+          <span style={{ fontSize: 18, animation: "hourglass 1.2s ease-in-out infinite" }}>⏳</span>
+          <span style={{ fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,0.85)", letterSpacing: "-0.3px" }}>
+            {dataLoading ? "기사 데이터 수집 중..." :
+             dateLoading ? "특정일 데이터 수집 중..." :
+             journalistLoading ? "기자명 수집 중..." : "로딩 중..."}
+          </span>
+          <div style={{
+            position: "absolute", bottom: 0, left: 0, height: 2,
+            background: "linear-gradient(90deg, transparent, #FF6B35, transparent)",
+            animation: "loadingSlide 1.5s ease-in-out infinite",
+            width: "40%",
+          }} />
+        </div>
+      )}
+
       {/* ── Header ── */}
       <header style={{
         padding: "20px 24px 0",
+        paddingTop: isAnyLoading ? 52 : 20,
         borderBottom: "1px solid rgba(255,255,255,0.06)",
         background: "linear-gradient(180deg, rgba(255,107,53,0.08) 0%, transparent 100%)",
+        transition: "padding-top 0.3s ease",
       }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12, marginBottom: 16 }}>
           {/* 로고 */}
@@ -1016,6 +1045,15 @@ export default function TenAsiaDashboard() {
         @keyframes fadeIn {
           from { opacity: 0; transform: translateY(8px); }
           to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes hourglass {
+          0%   { transform: rotate(0deg); }
+          40%  { transform: rotate(180deg); }
+          100% { transform: rotate(180deg); }
+        }
+        @keyframes loadingSlide {
+          0%   { left: -40%; }
+          100% { left: 100%; }
         }
         * { box-sizing: border-box; }
         body { margin: 0; }
