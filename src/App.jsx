@@ -162,8 +162,9 @@ async function analyzeWithGemini(report, period) {
 한국어로, 친절하고 전문적으로 작성해주세요. 각 항목은 명확히 구분해주세요.
   `.trim();
 
+  // 사용 가능한 모델: gemini-1.5-flash (추천), gemini-1.5-pro, gemini-2.0-flash-exp
   const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-04-17:generateContent?key=${apiKey}`,
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
