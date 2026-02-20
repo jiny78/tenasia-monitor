@@ -237,13 +237,22 @@ function SimpleMarkdown({ text }) {
   );
 }
 
-// ── RSS 데이터 가져오기 ────────────────────────────────────────────────
+// ── RSS 데이터 가져오기 (기본: 오늘+최근 13일) ────────────────────────
 async function fetchRssArticles() {
   const res = await fetch("/api/rss");
   if (!res.ok) throw new Error("RSS 데이터를 가져올 수 없습니다.");
   const data = await res.json();
   if (!data.success) throw new Error(data.error || "RSS 수집 실패");
   return data.articles;
+}
+
+// ── 특정일 사이트맵 실시간 요청 ───────────────────────────────────────
+async function fetchSitemapByDate(dateStr) {
+  const res = await fetch(`/api/sitemap?date=${dateStr}`);
+  if (!res.ok) throw new Error("사이트맵 요청 실패");
+  const data = await res.json();
+  if (!data.success) throw new Error(data.error || "사이트맵 수집 실패");
+  return data.articles || [];
 }
 
 // ══════════════════════════════════════════════════════════════════════
@@ -255,11 +264,16 @@ export default function TenAsiaDashboard() {
   const [selectedKeyword, setSelectedKeyword] = useState(null);
   const [isLoaded, setIsLoaded] = useState(false);
 
-  // 실제 데이터
+  // 실제 데이터 (기본: 오늘+최근 13일)
   const [articles, setArticles] = useState(ALL_SAMPLE_ARTICLES);
   const [dataSource, setDataSource] = useState("demo"); // "demo" | "live"
   const [dataLoading, setDataLoading] = useState(true);
   const [dataError, setDataError] = useState("");
+
+  // 특정일 데이터 (실시간 요청)
+  const [dateArticles, setDateArticles] = useState(null); // null = 미선택
+  const [dateLoading, setDateLoading] = useState(false);
+  const [dateError, setDateError] = useState("");
 
   // AI 분석
   const [aiResult, setAiResult] = useState("");
@@ -285,7 +299,10 @@ export default function TenAsiaDashboard() {
 
   const days = PERIOD_OPTIONS[selectedPeriod].days;
   const periodLabel = specificDate ? `${specificDate} 하루` : PERIOD_OPTIONS[selectedPeriod].label;
-  const filtered = filterByPeriod(articles, days, specificDate || null);
+  // 특정일 선택 시 → dateArticles 우선, 없으면 기존 articles에서 필터
+  const filtered = specificDate
+    ? (dateArticles !== null ? dateArticles : filterByPeriod(articles, days, specificDate))
+    : filterByPeriod(articles, days, null);
   const report = buildReport(filtered);
 
   const keywordData = (report.top_keywords || []).map(([name, count]) => ({ name, count }));
@@ -418,7 +435,7 @@ export default function TenAsiaDashboard() {
                 📅 {specificDate || "특정일"}
                 {specificDate && (
                   <span
-                    onClick={(e) => { e.stopPropagation(); setSpecificDate(""); setShowDatePicker(false); setAiResult(""); setAiError(""); }}
+                    onClick={(e) => { e.stopPropagation(); setSpecificDate(""); setShowDatePicker(false); setDateArticles(null); setDateError(""); setAiResult(""); setAiError(""); }}
                     style={{ marginLeft: 4, fontSize: 13, lineHeight: 1, opacity: 0.8, cursor: "pointer" }}
                   >✕</span>
                 )}
@@ -438,10 +455,28 @@ export default function TenAsiaDashboard() {
                     value={specificDate}
                     max={new Date(new Date().getTime() + 9*60*60*1000).toISOString().slice(0,10)}
                     onChange={(e) => {
-                      setSpecificDate(e.target.value);
+                      const d = e.target.value;
+                      setSpecificDate(d);
                       setShowDatePicker(false);
                       setSelectedKeyword(null);
                       setAiResult(""); setAiError("");
+                      setDateArticles(null);
+                      setDateError("");
+                      if (d) {
+                        // 기존 articles에 해당 날짜 데이터가 충분히 있는지 확인
+                        const existing = filterByPeriod(articles, 9999, d);
+                        if (existing.length > 0 && dataSource === "live") {
+                          // 이미 있으면 그대로 사용
+                          setDateArticles(existing);
+                        } else {
+                          // 없으면 실시간 사이트맵 요청
+                          setDateLoading(true);
+                          fetchSitemapByDate(d)
+                            .then((data) => setDateArticles(data))
+                            .catch((err) => setDateError(err.message))
+                            .finally(() => setDateLoading(false));
+                        }
+                      }
                     }}
                     style={{
                       width: "100%", padding: "7px 10px", borderRadius: 7,
@@ -487,12 +522,47 @@ export default function TenAsiaDashboard() {
       <main style={{ padding: "20px 24px 60px", opacity: isLoaded ? 1 : 0, transition: "opacity 0.5s ease" }}>
 
         {/* 기간 배지 */}
-        <div style={{ marginBottom: 16, display: "flex", alignItems: "center", gap: 8 }}>
+        <div style={{ marginBottom: 12, display: "flex", alignItems: "center", gap: 8 }}>
           <span style={{ fontSize: 11, color: "rgba(232,230,240,0.3)" }}>
             조회 기간: <span style={{ color: "#FF6B35", fontWeight: 600 }}>{periodLabel}</span>
             &nbsp;·&nbsp; 기사 {report.total_articles}건
           </span>
         </div>
+
+        {/* 특정일 로딩 / 에러 / 결과 배너 */}
+        {specificDate && (
+          <div style={{ marginBottom: 16 }}>
+            {dateLoading && (
+              <div style={{
+                padding: "10px 16px", borderRadius: 8, fontSize: 12,
+                background: "rgba(255,107,53,0.08)", border: "1px solid rgba(255,107,53,0.2)",
+                color: "rgba(255,107,53,0.8)", display: "flex", alignItems: "center", gap: 8,
+              }}>
+                <span style={{ animation: "spin 1s linear infinite", display: "inline-block" }}>⏳</span>
+                {specificDate} 날짜 기사를 불러오는 중...
+              </div>
+            )}
+            {!dateLoading && dateError && (
+              <div style={{
+                padding: "10px 16px", borderRadius: 8, fontSize: 12,
+                background: "rgba(220,38,38,0.08)", border: "1px solid rgba(220,38,38,0.2)",
+                color: "rgba(255,100,100,0.9)",
+              }}>
+                ⚠️ {dateError}
+              </div>
+            )}
+            {!dateLoading && !dateError && dateArticles !== null && (
+              <div style={{
+                padding: "10px 16px", borderRadius: 8, fontSize: 12,
+                background: "rgba(5,150,105,0.08)", border: "1px solid rgba(5,150,105,0.2)",
+                color: "rgba(5,200,120,0.9)",
+              }}>
+                ✅ {specificDate} — 총 <strong>{dateArticles.length}건</strong> 조회됨
+                {dateArticles.length === 0 && <span style={{ marginLeft: 8, opacity: 0.6 }}>(해당 날짜 기사 없음)</span>}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* ── 개요 탭 ── */}
         {activeTab === "overview" && (
