@@ -255,6 +255,7 @@ export default function TenAsiaDashboard() {
           {[
             { id: "overview", label: "📊 개요" },
             { id: "keywords", label: "🔥 키워드" },
+            { id: "articles", label: "📰 베스트 기사" },
             { id: "ai", label: "🤖 AI 분석" },
           ].map(tab => (
             <button key={tab.id} onClick={() => setActiveTab(tab.id)} style={{
@@ -420,6 +421,109 @@ export default function TenAsiaDashboard() {
                     ))}
                   </div>
                 )}
+              </>
+            )}
+          </div>
+        )}
+
+        {/* ── 베스트 기사 탭 ── */}
+        {activeTab === "articles" && (
+          <div>
+            {filtered.length === 0 ? (
+              <div style={{ ...cardStyle, textAlign: "center", padding: 40 }}>
+                <p style={{ color: "rgba(232,230,240,0.3)", fontSize: 14 }}>선택한 기간에 기사가 없습니다.</p>
+              </div>
+            ) : (
+              <>
+                <div style={{ marginBottom: 16, display: "flex", alignItems: "center", gap: 8 }}>
+                  <span style={{ fontSize: 12, color: "rgba(232,230,240,0.35)" }}>
+                    키워드 언급 많은 순 · 총 <span style={{ color: "#FF6B35", fontWeight: 600 }}>{filtered.length}건</span>
+                  </span>
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                  {[...filtered]
+                    .sort((a, b) => (b.matched_keywords?.length || 0) - (a.matched_keywords?.length || 0))
+                    .map((article, i) => (
+                      <a
+                        key={i}
+                        href={article.url !== "#" ? article.url : undefined}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{ textDecoration: "none" }}
+                      >
+                        <div style={{
+                          padding: "16px 18px", borderRadius: 12,
+                          background: "rgba(255,255,255,0.02)",
+                          border: "1px solid rgba(255,255,255,0.06)",
+                          transition: "all 0.2s",
+                          cursor: article.url !== "#" ? "pointer" : "default",
+                          display: "flex", alignItems: "flex-start", gap: 14,
+                        }}
+                          onMouseEnter={e => {
+                            e.currentTarget.style.background = "rgba(255,107,53,0.05)";
+                            e.currentTarget.style.borderColor = "rgba(255,107,53,0.2)";
+                          }}
+                          onMouseLeave={e => {
+                            e.currentTarget.style.background = "rgba(255,255,255,0.02)";
+                            e.currentTarget.style.borderColor = "rgba(255,255,255,0.06)";
+                          }}
+                        >
+                          {/* 순위 */}
+                          <div style={{
+                            minWidth: 28, height: 28, borderRadius: 8,
+                            background: i < 3 ? `linear-gradient(135deg, ${COLORS[i]}, ${COLORS[i]}88)` : "rgba(255,255,255,0.05)",
+                            display: "flex", alignItems: "center", justifyContent: "center",
+                            fontSize: 12, fontWeight: 800,
+                            color: i < 3 ? "#fff" : "rgba(232,230,240,0.3)",
+                            flexShrink: 0,
+                          }}>
+                            {i + 1}
+                          </div>
+
+                          {/* 본문 */}
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <p style={{
+                              fontSize: 13, fontWeight: 600, margin: "0 0 8px",
+                              color: "#E8E6F0", lineHeight: 1.5,
+                              whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+                            }}>
+                              {article.title}
+                            </p>
+                            <div style={{ display: "flex", flexWrap: "wrap", gap: 6, alignItems: "center" }}>
+                              {/* 카테고리 뱃지 */}
+                              <span style={{
+                                fontSize: 11, padding: "2px 8px", borderRadius: 4,
+                                background: "rgba(255,255,255,0.05)",
+                                color: "rgba(232,230,240,0.45)",
+                              }}>
+                                {article.category}
+                              </span>
+                              {/* 키워드 태그 */}
+                              {(article.matched_keywords || []).map((kw, ki) => (
+                                <span key={ki} style={{
+                                  fontSize: 11, padding: "2px 8px", borderRadius: 4,
+                                  background: `${COLORS[ki % COLORS.length]}18`,
+                                  color: COLORS[ki % COLORS.length],
+                                  fontWeight: 600,
+                                }}>
+                                  # {kw}
+                                </span>
+                              ))}
+                              {/* 날짜 */}
+                              <span style={{ fontSize: 11, color: "rgba(232,230,240,0.25)", marginLeft: "auto" }}>
+                                {article.collected_at?.slice(0, 10)}
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* 외부링크 아이콘 */}
+                          {article.url !== "#" && (
+                            <span style={{ fontSize: 14, color: "rgba(232,230,240,0.2)", flexShrink: 0 }}>↗</span>
+                          )}
+                        </div>
+                      </a>
+                    ))}
+                </div>
               </>
             )}
           </div>
