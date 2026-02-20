@@ -2,27 +2,35 @@ import { useState, useEffect } from "react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, CartesianGrid } from "recharts";
 
 // ── 샘플 데이터 (실제 데이터 연동 전 데모용) ──────────────────────────
+// 오늘 날짜 기준으로 상대적인 날짜 생성 (필터가 정상 동작하도록)
+function daysAgo(n, hour = 10) {
+  const d = new Date();
+  d.setDate(d.getDate() - n);
+  d.setHours(hour, 0, 0, 0);
+  return d.toISOString().slice(0, 19);
+}
+
 const ALL_SAMPLE_ARTICLES = [
-  { title: "방탄소년단 진, 솔로 월드투어 20만 동원", url: "#", category: "뮤직", matched_keywords: ["BTS"], collected_at: "2026-02-20T10:00:00" },
-  { title: "BTS 제이홉, 군 전역 후 첫 공식 스케줄 확정", url: "#", category: "뮤직", matched_keywords: ["BTS"], collected_at: "2026-02-19T09:00:00" },
-  { title: "하이브, BTS 신규 프로젝트 발표 예고", url: "#", category: "엔터비즈", matched_keywords: ["BTS", "하이브"], collected_at: "2026-02-18T11:00:00" },
-  { title: "아이브, 日 오리콘 차트 1위 달성", url: "#", category: "뮤직", matched_keywords: ["아이브"], collected_at: "2026-02-20T08:00:00" },
-  { title: "장원영, 글로벌 브랜드 앰배서더 추가 선정", url: "#", category: "연예가화제", matched_keywords: ["아이브"], collected_at: "2026-02-17T14:00:00" },
-  { title: "세븐틴, 북미 스타디움 투어 전석 매진", url: "#", category: "뮤직", matched_keywords: ["세븐틴"], collected_at: "2026-02-16T10:00:00" },
-  { title: "세븐틴 호시, 자작곡으로 음원차트 진입", url: "#", category: "뮤직", matched_keywords: ["세븐틴"], collected_at: "2026-02-15T09:00:00" },
-  { title: "에스파, 신보 발매 첫날 100만장 돌파", url: "#", category: "뮤직", matched_keywords: ["에스파"], collected_at: "2026-02-14T12:00:00" },
-  { title: "뉴진스 컴백 일정 공식 발표", url: "#", category: "뮤직", matched_keywords: ["뉴진스"], collected_at: "2026-02-13T10:00:00" },
-  { title: "블랙핑크 제니, 솔로 앨범 글로벌 차트 석권", url: "#", category: "뮤직", matched_keywords: ["블랙핑크"], collected_at: "2026-02-12T11:00:00" },
-  { title: "SM엔터, 2분기 실적 전망 상향", url: "#", category: "엔터비즈", matched_keywords: ["SM"], collected_at: "2026-02-11T09:00:00" },
-  { title: "JYP 새 걸그룹 데뷔 예고", url: "#", category: "엔터비즈", matched_keywords: ["JYP"], collected_at: "2026-02-10T10:00:00" },
-  { title: "스트레이키즈, 월드투어 추가 공연 확정", url: "#", category: "뮤직", matched_keywords: ["스트레이키즈"], collected_at: "2026-02-09T08:00:00" },
-  { title: "아이들, 신곡 MV 공개 24시간 1000만뷰 돌파", url: "#", category: "뮤직", matched_keywords: ["아이들"], collected_at: "2026-02-08T14:00:00" },
-  { title: "YG엔터, 블랙핑크 재계약 협상 진행 중", url: "#", category: "엔터비즈", matched_keywords: ["YG", "블랙핑크"], collected_at: "2026-02-07T11:00:00" },
-  { title: "BTS RM, 솔로 콘서트 전석 매진", url: "#", category: "뮤직", matched_keywords: ["BTS"], collected_at: "2026-02-06T10:00:00" },
-  { title: "카카오엔터, 글로벌 IP 사업 확장 발표", url: "#", category: "엔터비즈", matched_keywords: ["카카오"], collected_at: "2026-02-05T09:00:00" },
-  { title: "아이브 원영, 드라마 주연 캐스팅 확정", url: "#", category: "드라마예능", matched_keywords: ["아이브"], collected_at: "2026-02-04T13:00:00" },
-  { title: "세븐틴, 한국 가수 최초 웸블리 단독 공연", url: "#", category: "뮤직", matched_keywords: ["세븐틴"], collected_at: "2026-02-03T10:00:00" },
-  { title: "뉴진스 민지, 파리 패션위크 참석", url: "#", category: "연예가화제", matched_keywords: ["뉴진스"], collected_at: "2026-01-30T11:00:00" },
+  { title: "방탄소년단 진, 솔로 월드투어 20만 동원", url: "#", category: "뮤직", matched_keywords: ["BTS"], journalist: "이수민", collected_at: daysAgo(0, 10) },
+  { title: "BTS 제이홉, 군 전역 후 첫 공식 스케줄 확정", url: "#", category: "뮤직", matched_keywords: ["BTS"], journalist: "조나연", collected_at: daysAgo(1, 9) },
+  { title: "하이브, BTS 신규 프로젝트 발표 예고", url: "#", category: "엔터비즈", matched_keywords: ["BTS", "하이브"], journalist: "이수민", collected_at: daysAgo(2, 11) },
+  { title: "아이브, 日 오리콘 차트 1위 달성", url: "#", category: "뮤직", matched_keywords: ["아이브"], journalist: "정다연", collected_at: daysAgo(0, 8) },
+  { title: "장원영, 글로벌 브랜드 앰배서더 추가 선정", url: "#", category: "연예가화제", matched_keywords: ["아이브"], journalist: "이민경", collected_at: daysAgo(3, 14) },
+  { title: "세븐틴, 북미 스타디움 투어 전석 매진", url: "#", category: "뮤직", matched_keywords: ["세븐틴"], journalist: "태유나", collected_at: daysAgo(4, 10) },
+  { title: "세븐틴 호시, 자작곡으로 음원차트 진입", url: "#", category: "뮤직", matched_keywords: ["세븐틴"], journalist: "조나연", collected_at: daysAgo(5, 9) },
+  { title: "에스파, 신보 발매 첫날 100만장 돌파", url: "#", category: "뮤직", matched_keywords: ["에스파"], journalist: "정다연", collected_at: daysAgo(6, 12) },
+  { title: "뉴진스 컴백 일정 공식 발표", url: "#", category: "뮤직", matched_keywords: ["뉴진스"], journalist: "이소정", collected_at: daysAgo(7, 10) },
+  { title: "블랙핑크 제니, 솔로 앨범 글로벌 차트 석권", url: "#", category: "뮤직", matched_keywords: ["블랙핑크"], journalist: "이수민", collected_at: daysAgo(8, 11) },
+  { title: "SM엔터, 2분기 실적 전망 상향", url: "#", category: "엔터비즈", matched_keywords: ["SM"], journalist: "박서진", collected_at: daysAgo(9, 9) },
+  { title: "JYP 새 걸그룹 데뷔 예고", url: "#", category: "엔터비즈", matched_keywords: ["JYP"], journalist: "이민경", collected_at: daysAgo(10, 10) },
+  { title: "스트레이키즈, 월드투어 추가 공연 확정", url: "#", category: "뮤직", matched_keywords: ["스트레이키즈"], journalist: "태유나", collected_at: daysAgo(11, 8) },
+  { title: "아이들, 신곡 MV 공개 24시간 1000만뷰 돌파", url: "#", category: "뮤직", matched_keywords: ["아이들"], journalist: "조나연", collected_at: daysAgo(12, 14) },
+  { title: "YG엔터, 블랙핑크 재계약 협상 진행 중", url: "#", category: "엔터비즈", matched_keywords: ["YG", "블랙핑크"], journalist: "이수민", collected_at: daysAgo(13, 11) },
+  { title: "BTS RM, 솔로 콘서트 전석 매진", url: "#", category: "뮤직", matched_keywords: ["BTS"], journalist: "정다연", collected_at: daysAgo(14, 10) },
+  { title: "카카오엔터, 글로벌 IP 사업 확장 발표", url: "#", category: "엔터비즈", matched_keywords: ["카카오"], journalist: "박서진", collected_at: daysAgo(15, 9) },
+  { title: "아이브 원영, 드라마 주연 캐스팅 확정", url: "#", category: "드라마예능", matched_keywords: ["아이브"], journalist: "이소정", collected_at: daysAgo(16, 13) },
+  { title: "세븐틴, 한국 가수 최초 웸블리 단독 공연", url: "#", category: "뮤직", matched_keywords: ["세븐틴"], journalist: "태유나", collected_at: daysAgo(17, 10) },
+  { title: "뉴진스 민지, 파리 패션위크 참석", url: "#", category: "연예가화제", matched_keywords: ["뉴진스"], journalist: "이민경", collected_at: daysAgo(21, 11) },
 ];
 
 const COLORS = ["#FF6B35", "#E8308A", "#7B2FBE", "#2563EB", "#059669", "#D97706", "#DC2626", "#6366F1", "#0891B2", "#BE185D"];
@@ -116,7 +124,7 @@ async function analyzeWithGemini(report, period) {
   `.trim();
 
   const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
